@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"module": "CommonJS",
+		"moduleResolution": "Node",
+		"target": "ES6",
+		"lib": [
+			"es2020",
+			"DOM"
+		],
+		"outDir": "out",
+		"sourceMap": true,
+		"strict": true,
+		"rootDir": "src",
+		"noImplicitAny": false
+	},
+	"exclude": [
+		"node_modules",
+		".vscode-test"
+	]
+}

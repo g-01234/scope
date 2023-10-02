@@ -1,0 +1,73 @@
+{
+  "name": "scope-eth",
+  "description": "🔭",
+  "version": "0.0.1",
+  "publisher": "popular",
+  "icon": "assets/scope.png",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "scope",
+          "title": "scope",
+          "icon": "assets/scope-icon.png"
+        }
+      ]
+    },
+    "views": {
+      "scope": [
+        {
+          "type": "webview",
+          "id": "scope.toolkitView",
+          "name": "eth"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "please.call-rust",
+        "title": "call rust wasm"
+      },
+      {
+        "command": "disposable",
+        "title": "run cmd"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "test-compile": "tsc -p ./",
+    "compile": "tsc -p ./",
+    "lint": "eslint \"src/**/*.ts\"",
+    "watch": "tsc -w -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.4",
+    "@types/vscode": "^1.73.0",
+    "@typescript-eslint/eslint-plugin": "^5.48.2",
+    "@typescript-eslint/parser": "^5.48.2",
+    "esbuild": "^0.19.4",
+    "eslint": "^8.32.0",
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "axios": "^1.5.0"
+  }
+}
