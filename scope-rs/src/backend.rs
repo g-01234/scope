@@ -1,28 +1,22 @@
 use crate::{
     components::{CompiledContract, DeployedContract},
-    providers::{self, ClientProviderWrapper},
+    providers::{self},
     shared_state::{self, STATE},
     utils, wasm,
 };
 use ethers::{
     contract::{ContractFactory, ContractInstance},
-    prelude::{LocalWallet, MnemonicBuilder, Provider, SignerMiddleware},
-    providers::{Http, Middleware, ProviderExt, RawCall},
-    signers::Signer,
-    types::{
-        spoof, transaction::eip2718::TypedTransaction, BlockNumber, TransactionRequest, H160, U256,
-    },
+    prelude::{LocalWallet, Provider, SignerMiddleware},
+    providers::{Http, Middleware},
+    types::{BlockNumber, H160, U256},
     utils::parse_ether,
 };
 use eyre::Result;
 use hex;
-use js_sys::Array;
-use js_sys::Date;
-use serde_json::{json, Value};
 
-use std::{borrow::BorrowMut, sync::Arc};
-use std::{str, u8};
-use web_sys::{Event, File, FileReader};
+use serde_json::Value;
+
+use std::sync::Arc;
 
 // Functions for sending messages/queries to the extension
 // These will generally call a javascript function exposed in the bridge
@@ -96,6 +90,7 @@ pub fn initialize() -> Result<()> {
         let bal: U256 = parse_ether(100u64).expect("Error parsing init amount");
         for address in &addresses {
             // log!("Setting balance of {:?} to {:?}", address, bal);
+
             let setbal_params: Value = serde_json::json!([address, bal]);
 
             let _ = client_wrapper
@@ -109,15 +104,7 @@ pub fn initialize() -> Result<()> {
         *STATE.from_addresses.write().unwrap() =
             addresses.iter().map(|a| a.parse().unwrap()).collect();
 
-        // Check the balance was set successfully
-        // let addr: ethers::types::Address =
-        //     addresses[0].parse().expect("Error parsing init address");
-        // log!(
-        //     "balance of first address: {:?}",
-        //     client_wrapper.client.get_balance(addr, None).await
-        // );
-
-        // Allows us to impersonate anyone
+        // Allows us to impersonate anyone via autoImpersonate
         let impersonate_params: Value = serde_json::json!([true]);
 
         let _ = client_wrapper
@@ -174,14 +161,19 @@ pub fn set_storage_at(address: H160, slot: String, value: String) {
 
 pub fn load_at_address_wrapper(compiled: Option<CompiledContract>, address: String) {
     wasm_bindgen_futures::spawn_local(async {
-        if let Ok(result) = load_at_address(compiled, address).await {
-            log!("loaded contract");
+        match load_at_address(compiled, address).await {
+            Ok(result) => {
+                log!("loaded contract");
 
-            STATE
-                .deployed_contracts
-                .write()
-                .unwrap()
-                .insert(result.address_h160.to_string(), result);
+                STATE
+                    .deployed_contracts
+                    .write()
+                    .unwrap()
+                    .insert(result.address_h160.to_string(), result);
+            }
+            Err(e) => {
+                send_error_popup(format!("ERROR: {}", e));
+            }
         }
     });
 }
@@ -293,7 +285,7 @@ pub fn deploy_wrapper(compiled: CompiledContract, constructor_args: Vec<String>)
                     .unwrap()
                     .insert(contract.address_h160.to_string(), contract.clone());
             }
-            Err(e) => send_error_popup(format!("Error: {}", e)),
+            Err(e) => send_error_popup(format!("ERROR: {}", e)),
         }
     });
 }
@@ -376,7 +368,7 @@ pub fn deploy_raw_bytecode_wrapper(bytecode_string: String) {
                     .unwrap()
                     .insert(contract.address_h160.to_string(), contract.clone());
             }
-            Err(e) => send_error_popup(format!("Error: {:?}", e)),
+            Err(e) => send_error_popup(format!("ERROR: {:?}", e)),
         }
     });
 }

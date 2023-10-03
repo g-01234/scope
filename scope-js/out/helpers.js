@@ -9,88 +9,45 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTheme = exports.callTerminalHandleExit = exports.compileSoliditySource = exports.loadFile = exports.getOpenCompiledContracts = exports.getOpenCompiledFiles = exports.getOpenSolidityFiles = void 0;
+exports.getTheme = exports.callTerminalHandleExit = exports.compileSoliditySource = exports.loadFile = exports.getCompiledForOpenFiles = void 0;
 const vscode = require("vscode");
 const vscode_1 = require("vscode");
-let path = require("path");
-let fs = require("fs");
-function getOpenSolidityFiles() {
-    return __awaiter(this, void 0, void 0, function* () {
-        let files = [""];
-        if (vscode.workspace.workspaceFolders) {
-            const targetDirUri = vscode.workspace.workspaceFolders[0].uri; // Adjust as needed
-            const extension = ".sol"; // Adjust as needed
-            const openFiles = vscode.window.tabGroups.all
-                .flatMap(({ tabs }) => tabs.map((tab) => tab.label))
-                .filter((filename) => filename.endsWith(".sol"));
-            files = (yield findFilesWithExtension(targetDirUri, extension))
-                .filter((file) => {
-                return openFiles.includes(path.basename(file.fsPath));
-            })
-                .map((file) => {
-                return file.fsPath;
-            });
-        }
-        return files;
-    });
-}
-exports.getOpenSolidityFiles = getOpenSolidityFiles;
-// Note that this actually gets directory names; forge's `out` directory contains
-// directories named after the compiled .sol files
-function getOpenCompiledFiles() {
-    return __awaiter(this, void 0, void 0, function* () {
-        let files = [""];
-        if (vscode.workspace.workspaceFolders) {
-            const targetDirUri = vscode_1.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, "out"); // Adjust as needed
-            const openFiles = vscode.window.tabGroups.all
-                .flatMap(({ tabs }) => tabs.map((tab) => tab.label))
-                .filter((filename) => filename.endsWith(".sol"));
-            // If the ./out/ directory doesn't exist (i.e. we haven't 📋compiled), want to just return [""]
-            try {
-                const compiled = (yield vscode.workspace.fs.readDirectory(targetDirUri))
-                    .filter(([name, _]) => {
-                    return openFiles.includes(name);
-                })
-                    .map(([name, _]) => {
-                    return name;
-                });
-                files = compiled;
-            }
-            catch (_a) { }
-        }
-        return files;
-    });
-}
-exports.getOpenCompiledFiles = getOpenCompiledFiles;
-function getOpenCompiledContracts(directories, outDir) {
+function getCompiledForOpenFiles() {
     return __awaiter(this, void 0, void 0, function* () {
         let contracts = [];
+        if (!vscode.workspace.workspaceFolders) {
+            return contracts; // You may throw an error or log a message here
+        }
+        // Get the open .sol files
+        const openFiles = vscode.window.tabGroups.all
+            .flatMap(({ tabs }) => tabs.map((tab) => tab.label))
+            .filter((filename) => filename.endsWith(".sol"));
+        // Function to find and filter compiled contracts
+        const findAndFilterCompiledContracts = (dirUri, contractName) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const compiledContracts = (yield vscode.workspace.fs.readDirectory(dirUri))
+                    .filter(([name, type]) => type === vscode.FileType.File && name.endsWith(".json"))
+                    .map(([name, _]) => vscode_1.Uri.joinPath(dirUri, name).toString());
+                return compiledContracts;
+            }
+            catch (e) {
+                return [];
+            }
+        });
+        // Directories to check
+        const directories = ["out", "artifacts/.foundry"];
+        // Iterate over directories and collect compiled contracts for open .sol files
         for (const dir of directories) {
-            const dirUri = vscode_1.Uri.joinPath(outDir, dir);
-            const contractFiles = (yield vscode.workspace.fs.readDirectory(dirUri))
-                .filter(([name, type]) => type === vscode.FileType.File && name.endsWith(".json"))
-                .map(([name, _]) => vscode_1.Uri.joinPath(dirUri, name).toString());
-            contracts = contracts.concat(contractFiles);
+            for (const openFile of openFiles) {
+                const dirUri = vscode_1.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, `${dir}/${openFile}`);
+                const contractFiles = yield findAndFilterCompiledContracts(dirUri, openFile);
+                contracts = [...new Set([...contracts, ...contractFiles])];
+            }
         }
         return contracts;
     });
 }
-exports.getOpenCompiledContracts = getOpenCompiledContracts;
-function findFilesWithExtension(dirUri, extension, files = []) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const entries = yield vscode.workspace.fs.readDirectory(dirUri);
-        for (const [name, type] of entries) {
-            const entryUri = dirUri.with({ path: dirUri.path + "/" + name });
-            if (type === vscode.FileType.Directory) {
-                yield findFilesWithExtension(entryUri, extension, files);
-            }
-            else if (type === vscode.FileType.File && name.endsWith(extension)) {
-                files.push(entryUri);
-            }
-        }
-        return files;
-    });
-}
+exports.getCompiledForOpenFiles = getCompiledForOpenFiles;
 function loadFile(uri) {
     return __awaiter(this, void 0, void 0, function* () {
         return yield vscode.workspace.fs.readFile(uri);
@@ -168,4 +125,108 @@ function getTheme() {
     });
 }
 exports.getTheme = getTheme;
+// async function findFilesWithExtension(
+//   dirUri: vscode.Uri,
+//   extension: string,
+//   files: vscode.Uri[] = []
+// ): Promise<vscode.Uri[]> {
+//   const entries = await vscode.workspace.fs.readDirectory(dirUri);
+//   for (const [name, type] of entries) {
+//     const entryUri = dirUri.with({ path: dirUri.path + "/" + name });
+//     if (type === vscode.FileType.Directory) {
+//       await findFilesWithExtension(entryUri, extension, files);
+//     } else if (type === vscode.FileType.File && name.endsWith(extension)) {
+//       files.push(entryUri);
+//     }
+//   }
+//   return files;
+// }
+// export async function getOpenSolidityFiles(): Promise<string[]> {
+//   let files = [""];
+//   if (vscode.workspace.workspaceFolders) {
+//     const extension: string = ".sol";
+//     // Get open files with .sol extension
+//     const openFiles = vscode.window.tabGroups.all
+//       .flatMap(({ tabs }) => tabs.map((tab) => tab.label))
+//       .filter((filename) => filename.endsWith(extension));
+//     // Function to find and filter files in a directory based on their extension
+//     const findAndFilterFiles = async (dirUri: Uri, ext: string) => {
+//       const pattern = new vscode.RelativePattern(dirUri, `**/*${ext}`);
+//       const foundFiles = await vscode.workspace.findFiles(pattern, null, 100);
+//       return foundFiles.filter((file) => openFiles.includes(path.basename(file.fsPath))).map((file) => file.fsPath);
+//     };
+//     // Check the root directory
+//     // const rootDirUri: Uri = vscode.workspace.workspaceFolders[0].uri;
+//     // const rootFiles = await findAndFilterFiles(rootDirUri, extension);
+//     // Add any other directories you want to check here, for example:
+//     const foundryNativeDir: Uri = Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, "out");
+//     const foundryNativeFiles = await findAndFilterFiles(foundryNativeDir, extension);
+//     const hardhatDir: Uri = Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, "artifacts/.foundry");
+//     const hardhatFiles = await findAndFilterFiles(hardhatDir, extension);
+//     // Combine the lists
+//     files = [...new Set([...foundryNativeFiles, ...hardhatFiles])];
+//   }
+//   return files;
+// }
+// Note that this actually gets directory names; forge's `out` directory contains
+// directories named after the compiled .sol files
+// export async function getOpenCompiledFiles(): Promise<string[]> {
+//   let files = [""];
+//   if (vscode.workspace.workspaceFolders) {
+//     // Get the open files
+//     const openFiles = vscode.window.tabGroups.all
+//       .flatMap(({ tabs }) => tabs.map((tab) => tab.label))
+//       .filter((filename) => filename.endsWith(".sol"));
+//     // Function to read a directory and filter its contents
+//     const readAndFilterDirectory = async (dirPath: string) => {
+//       //@ts-ignore - vscode.workspace.workspaceFolders[0] is not undefined
+//       const targetDirUri: Uri = Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, dirPath);
+//       try {
+//         const compiled = (await vscode.workspace.fs.readDirectory(targetDirUri))
+//           .filter(([name, _]) => openFiles.includes(name))
+//           .map(([name, _]) => name);
+//         return compiled;
+//       } catch {
+//         return [];
+//       }
+//     };
+//     // Check the ./out/ directory
+//     const foundryNativeFiles = await readAndFilterDirectory("out");
+//     // Check the ./artifacts/.foundry/ directory (for hardhat-based projects)
+//     const hardhatFiles = await readAndFilterDirectory("artifacts/.foundry");
+//     // Combine the lists
+//     files = [...new Set([...foundryNativeFiles, ...hardhatFiles])];
+//     console.log("Files in getOpenCompiledFiles: ", files);
+//   }
+//   return files;
+// }
+// export async function getOpenCompiledContracts(): Promise<string[]> {
+//   let contracts: string[] = [];
+//   if (!vscode.workspace.workspaceFolders) {
+//     return contracts; // should probably throw an error
+//   }
+//   // Function to find and filter compiled contract files in a directory
+//   const findAndFilterCompiledContracts = async (dirUri: Uri) => {
+//     try {
+//       const compiledContracts = (await vscode.workspace.fs.readDirectory(dirUri))
+//         .filter(([name, type]) => type === vscode.FileType.File && name.endsWith(".json"))
+//         .map(([name, _]) => Uri.joinPath(dirUri, name).toString());
+//       return compiledContracts;
+//     } catch (e) {
+//       return [];
+//     }
+//   };
+//   // List of directories you want to check
+//   const directories = ["out", "artifacts/.foundry"];
+//   // Iterate over the directories and collect the compiled contracts
+//   for (const dir of directories) {
+//     const dirUri: Uri = Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, dir);
+//     console.log("dirUri: ", dirUri);
+//     const contractFiles = await findAndFilterCompiledContracts(dirUri);
+//     console.log(contractFiles);
+//     contracts = [...new Set([...contracts, ...contractFiles])];
+//   }
+//   console.log("Contracts in getOpenCompiledContracts: ", contracts);
+//   return contracts;
+// }
 //# sourceMappingURL=helpers.js.map

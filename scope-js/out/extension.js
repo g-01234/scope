@@ -13,18 +13,14 @@ exports.ToolkitViewProvider = exports.activate = void 0;
 const vscode = require("vscode");
 const vscode_1 = require("vscode");
 const helpers = require("./helpers.js");
-// import * as solc from "solc";
-// import NativeSolcPlugin from "./remix-vscode-compiler/native_solidity_plugin.js";
-// import { ISources, CompilerInput, CompilerInputOptions } from "./remix-vscode-compiler/types";
-// import { exec } from "child_process";
 function activate(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        // Check if a terminal with the name "nkit" already exists, otherwise create one
+        // Check if a terminal with the name "scope" already exists, otherwise create one
         const terminalExists = vscode_1.window.terminals.find((terminal) => terminal.name === "scope");
         const terminal = terminalExists ? terminalExists : vscode_1.window.createTerminal("scope");
+        // Create our webview provider
         const provider = new ToolkitViewProvider(context.extensionUri, terminal);
         // await provider.instantiateWasm(context);
-        helpers.getTheme();
         context.subscriptions.push(vscode_1.window.registerWebviewViewProvider(ToolkitViewProvider.viewType, provider, {
             webviewOptions: { retainContextWhenHidden: true },
         }));
@@ -36,10 +32,7 @@ class ToolkitViewProvider {
     _terminal) {
         this._extensionUri = _extensionUri;
         this._terminal = _terminal;
-        if (vscode.workspace.workspaceFolders) {
-            this.cwd = vscode.workspace.workspaceFolders[0].uri;
-        }
-        else {
+        if (!vscode.workspace.workspaceFolders) {
             throw Error("There is no working directory defined. This extension requires VSCode is run at the root of a foundry project.");
         }
     }
@@ -48,71 +41,48 @@ class ToolkitViewProvider {
         webviewView.webview.options = {
             // Allow scripts in the webview
             enableScripts: true,
-            // enableCommandUris: true, can i use this to use a shell in wasm??
             localResourceRoots: [this._extensionUri],
         };
-        webviewView.onDidChangeVisibility((e) => {
-            console.log(e);
-        });
-        // Handle opening and closing of documents
+        // Load up our wasm binary in the webview html
+        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+        // Handle opening and closing of documents; rust side will then query for open files
         vscode.workspace.onDidOpenTextDocument((e) => {
             this.sendOpenOrClosedNotifToRust();
         });
         vscode.workspace.onDidCloseTextDocument((e) => {
             this.sendOpenOrClosedNotifToRust();
         });
-        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-        // Handle messages received from either rust or VSCode
+        // Handle messages in our webview (received from either rust or VSCode)
+        // Essentially a function selector
         webviewView.webview.onDidReceiveMessage((message) => __awaiter(this, void 0, void 0, function* () {
-            // console.log("in ondidreceivemessage");
-            // function selector for rust -> js calls
             const handleMessage = (message) => __awaiter(this, void 0, void 0, function* () {
                 var _a;
                 console.log(message);
                 switch (message.command) {
-                    case "called_from_rust": {
-                        console.log("called_from_rust");
-                        break;
-                    }
                     case "get_open_files": {
-                        // get solidity filenames
-                        console.log("in vscode handling get_open_files");
-                        // let openFiles = await helpers.getOpenSolidityFiles();
-                        let openFiles = yield helpers.getOpenCompiledFiles();
-                        let compiledContracts = [""];
-                        if (JSON.stringify(openFiles) !== JSON.stringify(compiledContracts)) {
-                            const outPath = vscode_1.Uri.joinPath(this.cwd, "out");
-                            compiledContracts = yield helpers.getOpenCompiledContracts(openFiles, outPath);
-                        }
+                        // get filepaths of compiled .json files for whichever solidity files are open in the editor
+                        let compiledContracts = yield helpers.getCompiledForOpenFiles();
                         yield this.sendOpenFilesToRust(compiledContracts);
-                        console.log("sent openfiles");
                         break;
                     }
                     case "get_file_contents": {
                         const contents = (yield helpers.loadFile(vscode_1.Uri.parse((_a = message.data) === null || _a === void 0 ? void 0 : _a.filePath))).toString();
-                        // const compiledJson: string = await helpers.compileSoliditySource(contents);
-                        console.log(contents);
                         yield this.sendFileContentsToRust(contents); // TODO: do we need anything other than compiled solidity?
                         break;
                     }
                     case "get_compiled_solidity": {
-                        // handle solidity file specifically
-                        // const compiledPath = Uri.joinPath(this.cwd, "out", message.data?.filePath);
-                        console.log(message.data.filePath);
                         const contents = (yield helpers.loadFile(vscode_1.Uri.parse(message.data.filePath))).toString();
                         yield this.sendCompiledSolidityToRust(contents, message.data.filePath);
-                        // console.log("compiling");
-                        // console.time("compile");
-                        // const compiledJson: string = await helpers.compileSoliditySource(contents);
-                        // console.timeEnd("compile");
                         break;
                     }
+                    // TODO: handle this better
                     case "forge_build": {
                         // hacky way for wasm side to know when a vscode terminal command completes
                         yield helpers.callTerminalHandleExit("forge build");
                         yield this.sendCompletedCompileNotifToRust();
                         break;
                     }
+                    // TODO: handle this better
                     case "execute_shell_command": {
                         if (this._terminal.exitStatus) {
                             this._terminal.dispose();
@@ -147,19 +117,9 @@ class ToolkitViewProvider {
                         });
                         break;
                     }
+                    // TODO delete?
                     case "webviewBlurred": {
                         this.sendLostFocusToRust();
-                        const document = yield vscode.workspace.openTextDocument();
-                        // const editor = vscode.window.activeTextEditor;
-                        // if (editor) {
-                        //   const position = editor.selection.active;
-                        //   var newPosition = position.with(position.line, 0);
-                        //   var newSelection = new vscode.Selection(newPosition, newPosition);
-                        //   editor.selection = newSelection;
-                        //   console.log("newselection", editor.selection);
-                        // } else {
-                        //   console.log("no editor");
-                        // }
                         break;
                     }
                     case "webviewFocused": {
@@ -170,13 +130,6 @@ class ToolkitViewProvider {
             });
             yield handleMessage(message);
         }));
-    }
-    callRust() {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            // console.log("in callrust");
-            (_a = this._view) === null || _a === void 0 ? void 0 : _a.webview.postMessage({ command: "call_to_rust" });
-        });
     }
     sendOpenFilesToRust(solFiles) {
         var _a;
@@ -261,7 +214,7 @@ class ToolkitViewProvider {
       content="default-src 'self';
                script-src 'self' 'unsafe-inline' 'unsafe-eval' vscode-resource: file: ;
                style-src 'self' 'unsafe-inline';
-               connect-src *; ">
+               connect-src 'self' vscode-resource: file http://127.0.0.1:8545 ">
 
 
 

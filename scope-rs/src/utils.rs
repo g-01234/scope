@@ -1,10 +1,7 @@
 // STYLE UTILS
 use eyre::{eyre, Result};
 
-use egui::{
-    FontFamily::{Monospace, Proportional},
-    FontId, TextStyle,
-};
+use egui::{FontFamily::Monospace, FontId, TextStyle};
 use ethers::{
     signers::{LocalWallet, MnemonicBuilder},
     types::U256,
@@ -22,9 +19,6 @@ pub fn get_and_set_theme(
     let vscode_style = crate::backend::query_for_vscode_style().unwrap_or_default();
     match vscode_style["isDarkTheme"].as_bool()? {
         // dark / high contrast
-        // true => catppuccin_egui::set_theme(&cc.egui_ctx, catppuccin_egui::MACCHIATO),
-        // // light theme
-        // false => catppuccin_egui::set_theme(&cc.egui_ctx, catppuccin_egui::LATTE),
         true => catppuccin_egui::set_theme(&cc.egui_ctx, catppuccin_egui::MACCHIATO),
         // light theme
         false => catppuccin_egui::set_theme(&cc.egui_ctx, catppuccin_egui::LATTE),

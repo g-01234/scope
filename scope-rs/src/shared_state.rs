@@ -1,14 +1,9 @@
 use crate::{
-    components::{deployed_contract::ReturnAndReceipt, CompiledContract, DeployedContract},
+    components::{CompiledContract, DeployedContract, ReturnAndReceipt},
     providers::ClientProviderWrapper,
 };
 use egui::epaint::ahash::HashMap;
-use ethers::{
-    abi,
-    contract::ContractFactory,
-    solc::artifacts::Return,
-    types::{Address, Bytes, H160, U256},
-};
+use ethers::types::Address;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};

@@ -1,13 +1,15 @@
 use egui::epaint::ahash::HashMap;
 use ethers::{
-    abi::{token, Abi, ParamType, Token},
-    types::{I256, U256},
+    abi::{ParamType, Token},
+    types::U256,
 };
 use eyre::{eyre, Result};
 use serde_json::Value;
 
 use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
+
+// TODO: switch to alloy?
 
 pub fn encode_fn_call_to_tokens(
     func_name: String,
@@ -16,8 +18,6 @@ pub fn encode_fn_call_to_tokens(
 ) -> Result<Vec<Token>> {
     // create ethers contract object for this contract
     let abi: ethers::abi::Abi = serde_json::from_value(abi.clone()).unwrap();
-    // let base = ethers::contract::BaseContract::from(abi);
-    // let func = abi.functions.get(key)
 
     // This will probably run into issues if there are multiple fns w/ the same name;
     // should switch to using selectors
@@ -48,6 +48,7 @@ pub fn encode_fn_call_to_tokens(
     Ok(tokens)
 }
 
+// TODO - alloy?
 pub fn encode_fn_call_to_calldata(
     func_name: String,
     abi: &Value,
@@ -182,6 +183,7 @@ pub fn parse_input_to_token(param_kind: ParamType, input_value: String) -> Resul
         ParamType::Bytes => Ok(Token::Bytes(input_value.into_bytes())),
         ParamType::FixedBytes(_) => Ok(Token::FixedBytes(input_value.into_bytes())),
 
+        // TODO:
         // ParamType::Array(_) => Ok(Token::Array(
         //     input_value.clone().into_bytes().into_iter().collect(),
         // )),

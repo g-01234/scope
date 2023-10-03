@@ -2,19 +2,15 @@ import * as vscode from "vscode";
 import { commands, ExtensionContext, Uri, Webview, WebviewView, WebviewViewProvider, window, workspace } from "vscode";
 
 import * as helpers from "./helpers.js";
-// import * as solc from "solc";
-// import NativeSolcPlugin from "./remix-vscode-compiler/native_solidity_plugin.js";
-// import { ISources, CompilerInput, CompilerInputOptions } from "./remix-vscode-compiler/types";
-// import { exec } from "child_process";
 
 export async function activate(context: ExtensionContext) {
-  // Check if a terminal with the name "nkit" already exists, otherwise create one
+  // Check if a terminal with the name "scope" already exists, otherwise create one
   const terminalExists = window.terminals.find((terminal) => terminal.name === "scope");
   const terminal = terminalExists ? terminalExists : window.createTerminal("scope");
 
+  // Create our webview provider
   const provider = new ToolkitViewProvider(context.extensionUri, terminal);
   // await provider.instantiateWasm(context);
-  helpers.getTheme();
 
   context.subscriptions.push(
     window.registerWebviewViewProvider(ToolkitViewProvider.viewType, provider, {
@@ -25,18 +21,14 @@ export async function activate(context: ExtensionContext) {
 
 export class ToolkitViewProvider implements WebviewViewProvider {
   public static readonly viewType = "scope.toolkitView";
-  private instance?: WebAssembly.Instance;
 
   private _view?: WebviewView;
-  private cwd: Uri;
 
   constructor(
     private readonly _extensionUri: Uri, // private readonly _wasmInstance: WebAssembly.Instance,
     private _terminal: vscode.Terminal
   ) {
-    if (vscode.workspace.workspaceFolders) {
-      this.cwd = vscode.workspace.workspaceFolders[0].uri;
-    } else {
+    if (!vscode.workspace.workspaceFolders) {
       throw Error(
         "There is no working directory defined. This extension requires VSCode is run at the root of a foundry project."
       );
@@ -53,16 +45,13 @@ export class ToolkitViewProvider implements WebviewViewProvider {
     webviewView.webview.options = {
       // Allow scripts in the webview
       enableScripts: true,
-      // enableCommandUris: true, can i use this to use a shell in wasm??
-
       localResourceRoots: [this._extensionUri],
     };
 
-    webviewView.onDidChangeVisibility((e) => {
-      console.log(e);
-    });
+    // Load up our wasm binary in the webview html
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-    // Handle opening and closing of documents
+    // Handle opening and closing of documents; rust side will then query for open files
     vscode.workspace.onDidOpenTextDocument((e) => {
       this.sendOpenOrClosedNotifToRust();
     });
@@ -71,63 +60,40 @@ export class ToolkitViewProvider implements WebviewViewProvider {
       this.sendOpenOrClosedNotifToRust();
     });
 
-    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
-    // Handle messages received from either rust or VSCode
+    // Handle messages in our webview (received from either rust or VSCode)
+    // Essentially a function selector
     webviewView.webview.onDidReceiveMessage(async (message) => {
-      // console.log("in ondidreceivemessage");
-      // function selector for rust -> js calls
       const handleMessage = async (message: any) => {
         console.log(message);
         switch (message.command) {
-          case "called_from_rust": {
-            console.log("called_from_rust");
-            break;
-          }
-
           case "get_open_files": {
-            // get solidity filenames
-            console.log("in vscode handling get_open_files");
-            // let openFiles = await helpers.getOpenSolidityFiles();
-            let openFiles = await helpers.getOpenCompiledFiles();
-            let compiledContracts = [""];
-            if (JSON.stringify(openFiles) !== JSON.stringify(compiledContracts)) {
-              const outPath = Uri.joinPath(this.cwd, "out");
-              compiledContracts = await helpers.getOpenCompiledContracts(openFiles, outPath);
-            }
-
+            // get filepaths of compiled .json files for whichever solidity files are open in the editor
+            let compiledContracts = await helpers.getCompiledForOpenFiles();
             await this.sendOpenFilesToRust(compiledContracts);
-            console.log("sent openfiles");
             break;
           }
+
           case "get_file_contents": {
             const contents: string = (await helpers.loadFile(Uri.parse(message.data?.filePath))).toString();
-            // const compiledJson: string = await helpers.compileSoliditySource(contents);
-            console.log(contents);
             await this.sendFileContentsToRust(contents); // TODO: do we need anything other than compiled solidity?
             break;
           }
 
           case "get_compiled_solidity": {
-            // handle solidity file specifically
-            // const compiledPath = Uri.joinPath(this.cwd, "out", message.data?.filePath);
-            console.log(message.data.filePath);
-
             const contents: string = (await helpers.loadFile(Uri.parse(message.data.filePath))).toString();
             await this.sendCompiledSolidityToRust(contents, message.data.filePath);
-            // console.log("compiling");
-            // console.time("compile");
-            // const compiledJson: string = await helpers.compileSoliditySource(contents);
-            // console.timeEnd("compile");
-
             break;
           }
+
+          // TODO: handle this better
           case "forge_build": {
             // hacky way for wasm side to know when a vscode terminal command completes
             await helpers.callTerminalHandleExit("forge build");
             await this.sendCompletedCompileNotifToRust();
             break;
           }
+
+          // TODO: handle this better
           case "execute_shell_command": {
             if (this._terminal.exitStatus) {
               this._terminal.dispose();
@@ -137,6 +103,7 @@ export class ToolkitViewProvider implements WebviewViewProvider {
             this._terminal.sendText(message.data.command);
             break;
           }
+
           case "error_popup": {
             // these error formats kinda suck
             // vscode.window.showWarningMessage(message.data.errorText);
@@ -170,21 +137,9 @@ export class ToolkitViewProvider implements WebviewViewProvider {
             break;
           }
 
+          // TODO delete?
           case "webviewBlurred": {
             this.sendLostFocusToRust();
-            const document = await vscode.workspace.openTextDocument();
-
-            // const editor = vscode.window.activeTextEditor;
-            // if (editor) {
-            //   const position = editor.selection.active;
-
-            //   var newPosition = position.with(position.line, 0);
-            //   var newSelection = new vscode.Selection(newPosition, newPosition);
-            //   editor.selection = newSelection;
-            //   console.log("newselection", editor.selection);
-            // } else {
-            //   console.log("no editor");
-            // }
             break;
           }
           case "webviewFocused": {
@@ -193,13 +148,9 @@ export class ToolkitViewProvider implements WebviewViewProvider {
           }
         }
       };
+
       await handleMessage(message);
     });
-  }
-
-  public async callRust() {
-    // console.log("in callrust");
-    this._view?.webview.postMessage({ command: "call_to_rust" });
   }
 
   private async sendOpenFilesToRust(solFiles: string[]) {
@@ -274,7 +225,7 @@ export class ToolkitViewProvider implements WebviewViewProvider {
       content="default-src 'self';
                script-src 'self' 'unsafe-inline' 'unsafe-eval' vscode-resource: file: ;
                style-src 'self' 'unsafe-inline';
-               connect-src *; ">
+               connect-src 'self' vscode-resource: file http://127.0.0.1:8545 ">
 
 
 

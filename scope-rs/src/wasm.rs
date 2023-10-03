@@ -32,6 +32,7 @@ pub fn receive_open_file_paths(js_filepaths: &Array) {
             rust_strings.push(string);
         }
     }
+    log!("{:?}", rust_strings);
     *STATE.open_files.write().unwrap() = rust_strings;
 }
 

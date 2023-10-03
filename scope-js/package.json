@@ -3,6 +3,10 @@
   "description": "🔭",
   "version": "0.0.1",
   "publisher": "popular",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/g-01234/scope"
+  },
   "icon": "assets/scope.png",
   "private": true,
   "license": "MIT",
