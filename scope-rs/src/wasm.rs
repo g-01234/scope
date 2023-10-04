@@ -1,4 +1,4 @@
-use crate::{components::CompiledContract, shared_state::STATE};
+use crate::{backend, components::CompiledContract, shared_state::STATE};
 use js_sys::{Array, Date};
 use serde_json::Value;
 use wasm_bindgen::prelude::*;
@@ -60,6 +60,7 @@ pub fn receive_compiled_solidity(sol_json_string: JsValue, file_path: String) {
 #[wasm_bindgen]
 pub fn handle_completed_forge_build() {
     *STATE.completed_compile.write().unwrap() = Some(true);
+    get_open_files();
 }
 
 #[wasm_bindgen]
@@ -74,7 +75,6 @@ pub fn handle_losing_focus() {
 pub fn handle_gaining_focus() {
     log!("handle gained focus");
 
-    // this errors on startup
     *STATE.has_focus.write().unwrap() = true;
 }
 

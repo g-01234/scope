@@ -38,3 +38,6 @@ docs/
 
 # Dotenv file
 .env
+
+
+*.vsix

@@ -35,6 +35,7 @@ export class ToolkitViewProvider implements WebviewViewProvider {
     }
   }
 
+  // This is the "driver" function for the webview
   public resolveWebviewView(
     webviewView: WebviewView,
     context: vscode.WebviewViewResolveContext,
@@ -231,8 +232,7 @@ export class ToolkitViewProvider implements WebviewViewProvider {
 
 		<!-- Disable zooming: -->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-		<meta name="theme-color" media="(prefers-color-scheme: light)" content="#404040">
-		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#404040">
+
 
 
     <script> var isDarkTheme = ${isDarkTheme}; </script>

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/console.sol";
-
 contract Sample {
     uint256 public number;
     string public name;
@@ -13,19 +11,7 @@ contract Sample {
         owner = msg.sender;
     }
 
-    fallback() external payable {}
-
-    function returnSender() external view returns (address) {
-        return msg.sender;
-    }
-
-    function pureFunction() external pure returns (uint256) {
-        return 1;
-    }
-
-    function pureFunction2() external pure returns (uint256) {
-        return 1;
-    }
+    receive() external payable {}
 
     function returnBalance() external view returns (uint256) {
         return msg.sender.balance;
@@ -35,15 +21,9 @@ contract Sample {
         return msg.value;
     }
 
-    function require0xbbbb() external returns (bool) {
-        require(msg.sender == address(0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB));
+    function onlyOwner() external view returns (bool) {
+        require(msg.sender == owner);
         return true;
-    }
-
-    function keccak(bytes calldata b) external returns (bytes32) {
-        console.logBytes(b);
-
-        return keccak256(b);
     }
 
     function getMixedTuple() external view returns (uint64 namedRetVal, string memory, uint8) {
@@ -53,10 +33,6 @@ contract Sample {
 
     function intAndUint(int256 a, uint256 b) external view returns (int256, uint256) {
         return (a, b);
-    }
-
-    function maxUint(uint256 num) external returns (uint256) {
-        return type(uint256).max;
     }
 
     function setNumber(uint256 newNumber) public {

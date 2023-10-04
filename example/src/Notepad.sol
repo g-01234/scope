@@ -1,4 +1,4 @@
-pragma solidity 0.8.15;
+pragma solidity ^0.8.0;
 
 contract Notepad {
     function gas() public view returns (address sender, uint256 balance, uint256 gasLeft, uint256 slot0) {

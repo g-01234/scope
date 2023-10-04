@@ -50,7 +50,7 @@ pub fn get_and_set_theme(
     panel_frame.fill = panel_fill;
     // panel_frame.stroke = egui::Stroke::new(2.0, Color32::GOLD);
 
-    cc.egui_ctx.set_pixels_per_point(4.0);
+    cc.egui_ctx.set_pixels_per_point(10.0);
 
     let mut style = (*cc.egui_ctx.style()).clone();
     style.text_styles = [
