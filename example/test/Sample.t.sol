@@ -16,7 +16,7 @@ contract SampleTest is Test {
 
     function test_Increment() public {
         sample.increment();
-        // vm.breakpoint("a");
+
         assertEq(sample.number(), 1);
     }
 
