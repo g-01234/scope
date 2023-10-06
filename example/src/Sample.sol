@@ -11,7 +11,9 @@ contract Sample {
         owner = msg.sender;
     }
 
-    receive() external payable {}
+    receive() external payable {
+        return;
+    }
 
     function returnBalance() external view returns (uint256) {
         return msg.sender.balance;

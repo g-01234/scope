@@ -11,7 +11,6 @@ impl TxConfigSection {
     pub fn show(&mut self, ui: &mut egui::Ui, render_configs: &mut RenderConfigs) {
         ui.label("Transaction Configs");
         self.address_selector.show(ui, render_configs);
-
         self.render_value_input(ui);
     }
 

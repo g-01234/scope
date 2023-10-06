@@ -1,7 +1,7 @@
 // use eth_toolkit::shared_storage::{DeployedContract, BRIDGE};
 use crate::{
     abi, backend,
-    components::CompiledContract,
+    components::{CompiledContract, UtilityMenu},
     shared_state::{self, STATE},
     utils,
 };
@@ -13,22 +13,16 @@ use eyre::{eyre, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use ethers::{
-    abi::{token, Abi, ParamType, Token},
-    prelude::{LocalWallet, MnemonicBuilder, Provider, SignerMiddleware},
-    providers::{Http, Middleware, ProviderExt, Ws},
-    signers::Signer,
-    solc::artifacts::Return,
+    abi::Token,
+    providers::Middleware,
     types::{
-        transaction::eip2718::TypedTransaction, Address, Block, BlockNumber, Bytes,
-        Eip1559TransactionRequest, NameOrAddress, TransactionRequest, H160, H256, U256,
+        transaction::eip2718::TypedTransaction, Block, Bytes, Eip1559TransactionRequest, H160,
+        H256, U256,
     },
-    utils::parse_ether,
 };
-
-use super::UtilityMenu;
 
 // use ethers::contract::Contract;
 

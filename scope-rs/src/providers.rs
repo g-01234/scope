@@ -34,7 +34,6 @@ impl ClientProviderWrapper {
             chain_id,
             selected_address: client.address(),
             client,
-            // client,
         })
     }
 
