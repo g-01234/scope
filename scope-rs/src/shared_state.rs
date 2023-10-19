@@ -54,6 +54,7 @@ impl SharedState {
     pub fn new() -> Self {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
         Self {
+            // endpoint: RwLock::new("https://tinyurl.com/2w7bxmjx".to_string()),
             endpoint: RwLock::new("http://127.0.0.1:8545".to_string()),
             has_focus: RwLock::new(true),
             ..Default::default()
