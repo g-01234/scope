@@ -1,5 +1,7 @@
 # TODO
 
+- redo compile; send cmd + c
+
 - use onDidCloseTerminal for compile
 - encode contstructor args w/ copy create code
 - other tx args (gasprice, gaslimit)
