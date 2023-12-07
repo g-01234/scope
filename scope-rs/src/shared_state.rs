@@ -3,7 +3,7 @@ use crate::{
     providers::ClientProviderWrapper,
 };
 use egui::epaint::ahash::HashMap;
-use ethers::types::Address;
+use ethers::types::{Address, U256};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -66,7 +66,7 @@ impl SharedState {
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct TxConfigs {
     pub from_address: Address,
-    pub gas_price: String,
+    pub gas_price: U256,
     pub gas_limit: String,
     pub value: String,
     pub nonce: String,
@@ -79,7 +79,7 @@ impl Default for TxConfigs {
                 .to_string()
                 .parse()
                 .unwrap(),
-            gas_price: "".to_string(),
+            gas_price: (1e9 as u64).into(),
             gas_limit: "".to_string(),
             value: "".to_string(),
             nonce: "".to_string(),

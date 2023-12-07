@@ -326,6 +326,8 @@ async fn deploy(
         .tx
         .set_value(utils::eth_str_to_u256_wei(&tx_configs.value)?);
 
+    deployer.tx.set_gas_price(tx_configs.gas_price);
+
     log!("deployer: {:?}", deployer);
     let contract = deployer.send().await?;
     log!("contract! {:?}", contract);
@@ -397,6 +399,7 @@ async fn deploy_raw_bytecode(bytecode_ascii: String) -> Result<DeployedContract>
     deployer
         .tx
         .set_value(utils::eth_str_to_u256_wei(&tx_configs.value)?);
+    deployer.tx.set_gas_price(tx_configs.gas_price);
     let contract = deployer.send().await?;
     log!("contract: {:?}", contract);
     // 7. get the contract's address

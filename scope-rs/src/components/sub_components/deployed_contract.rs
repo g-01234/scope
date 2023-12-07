@@ -448,6 +448,8 @@ impl DeployedContract {
             .tx
             .set_value(utils::eth_str_to_u256_wei(&tx_configs.value)?);
 
+        fn_call.tx.set_gas_price(tx_configs.gas_price);
+
         log!("{:?}", fn_call.tx);
         let static_return = client.provider().call_raw(&fn_call.tx).await?;
 
@@ -590,8 +592,8 @@ impl DeployedContract {
         // double the estimated gas limit
         // hack until we implement gas field
         tx.set_gas(tx.clone().gas().unwrap_or(&U256::zero()) * U256::from(2));
-
         tx.set_value(utils::eth_str_to_u256_wei(&tx_configs.value)?);
+        tx.set_gas_price(tx_configs.gas_price);
 
         tx.set_to(address_h160);
         tx.set_data(calldata_bytes);
@@ -659,6 +661,7 @@ impl DeployedContract {
         client.fill_transaction(&mut tx, None).await?;
         tx.set_to(address_h160);
         tx.set_value(utils::eth_str_to_u256_wei(&tx_configs.value)?);
+        tx.set_gas_price(tx_configs.gas_price);
         tx.set_data(calldata_bytes);
 
         log!("{:?}", tx);

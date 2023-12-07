@@ -5,28 +5,39 @@ authors = ["popular"]
 edition = "2021"
 
 
-
 [dependencies]
 
-egui = {path = "../../learnrust/simple_gui/egui/crates/egui"}
+egui = { path = "../../learnrust/simple_gui/egui/crates/egui" }
 #egui = {version ="0.22.0"}
 #eframe = { version = "0.22.0", default-features = false, features = [
 eframe = { path = "../../learnrust/simple_gui/egui/crates/eframe", default-features = false, features = [
-    "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
+    "accesskit", # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     #"default_fonts", # Embed the default egui fonts.
-    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+    "glow", # Use the glow rendering backend. Alternative: "wgpu".
     #"wgpu",
-    "persistence",   # Enable restoring app state when restarting the app.
+    "persistence", # Enable restoring app state when restarting the app.
 ] }
 log = "0.4"
 
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }
-ethers = {version = "2.0.8", features = ["abigen", "rustls", "ws", "ethers-solc"]}
+ethers = { version = "2.0.11", features = [
+    "abigen",
+    "rustls",
+    "ws",
+    "ethers-solc",
+] }
 eyre = "0.6.8"
 # tokio = {version = "1.32.0", features = ["sync", "rt", "macros"]}
 wasm-bindgen-futures = "0.4"
-web-sys = {version ="0.3.64", features = ["console", "File", "FileReader", "FileList", "Event", "DateTimeValue"]}
+web-sys = { version = "0.3.64", features = [
+    "console",
+    "File",
+    "FileReader",
+    "FileList",
+    "Event",
+    "DateTimeValue",
+] }
 wasm-bindgen = "0.2.87"
 js-sys = "0.3.64"
 lazy_static = "1.4.0"
@@ -39,7 +50,7 @@ serde_with = "3.3.0"
 console_error_panic_hook = "0.1.7"
 catppuccin-egui = "3.1.0"
 regex = "1.9.4"
-indexmap = {version ="2.0.0", features=["serde"]}
+indexmap = { version = "2.0.0", features = ["serde"] }
 num-bigint = "0.4.4"
 num-traits = "0.2.16"
 
@@ -69,11 +80,11 @@ opt-level = 3
 # DELETE
 # egui = { path = "./egui/crates/egui" }
 # eframe = { path = "../egui/crates/eframe" }
-egui = {path = "../../learnrust/simple_gui/egui/crates/egui"}
+egui = { path = "../../learnrust/simple_gui/egui/crates/egui" }
 eframe = { path = "../../learnrust/simple_gui/egui/crates/eframe", default-features = false, features = [
-    "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
+    "accesskit", # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     #"default_fonts", # Embed the default egui fonts.
-    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+    "glow", # Use the glow rendering backend. Alternative: "wgpu".
     #"wgpu",
-    "persistence",   # Enable restoring app state when restarting the app.
+    "persistence", # Enable restoring app state when restarting the app.
 ] }
